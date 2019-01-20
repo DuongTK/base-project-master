@@ -16,7 +16,7 @@ import java.util.Date;
 @EntityListeners(AuditingEntityListener.class)
 @JsonIgnoreProperties( value = {"createdAt", "updatedAt","createdByUser","modifiedByUser"} )
 @Data
-public abstract class AuditModel implements Serializable {
+public abstract class BaseObject implements Serializable {
 
     @Column(name = "created_by_user", nullable = false)
     @CreatedBy

@@ -1,15 +1,21 @@
 package sapo.vn.product.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sapo.vn.product.constant.ApiResult;
 import sapo.vn.product.exception.ResourceNotFoundException;
+import sapo.vn.product.model.Product;
 import sapo.vn.product.model.Version;
 import sapo.vn.product.service.ProductService;
 import sapo.vn.product.service.VersionService;
 
 import javax.validation.Valid;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(value = "/admin")
@@ -29,34 +35,54 @@ public class VersionController {
     @RequestMapping(value = "/products/{product_id}/versions/{version_id}",method = RequestMethod.GET)
     public Version getVersionByID(@PathVariable(value = "product_id") String productId,
                                   @PathVariable(value = "version_id") String versionId){
-        return versionService.findByIdAndProductId(productId,versionId).get();
+        return versionService.findByIdAndProductId(productId,versionId).orElseThrow(()-> new ResourceNotFoundException("Not found Resourcse"));
     }
-
+Logger logger = LoggerFactory.getLogger(VersionController.class);
     @RequestMapping(value = "/products/{product_id}/versions",method = RequestMethod.POST)
-    public Version createVersion(@PathVariable(value = "product_id") String productId,
-                                 @Valid @RequestBody Version version){
-        return productService.findById(productId).map(product -> {
-            version.setProduct(product);
-            return versionService.save(version);
-        }).orElseThrow(() -> new ResourceNotFoundException("productId " + productId + " not found"));
+    public ApiResult createVersion(@PathVariable(value = "product_id") String productId,
+                                   @Valid @RequestBody Version version){
+        Optional<Product> product = productService.findById(productId);
+        if (product.isPresent()){
+            List<Version> versions = versionService.findAllByProductID(productId);
+            for( Version v : versions){
+                if (version.compare(v)){
+                    return new ApiResult(409,"version already exist !");
+                }
+            }
+            version.setProduct(product.get());
+            versionService.save(version);
+            return new ApiResult(200,"Add new version successful");
+        }
+        return new ApiResult(404,"productId "+productId+" not found");
     }
 
     @RequestMapping(value = "/products/{product_id}/versions/{version_id}",method = RequestMethod.PUT)
-    public Version updateVersion(@PathVariable(value = "product_id") String productId,
+    public ApiResult updateVersion(@PathVariable(value = "product_id") String productId,
                                  @PathVariable(value = "version_id") String versionId,
                                  @Valid @RequestBody Version version_update){
         if (!productService.existsById(productId)){
-            throw new ResourceNotFoundException("productId " + productId + " not found");
+            return new ApiResult(404,"productId " + productId + " not found");
         }
-        return versionService.findById(versionId).map(version -> {
+        Optional<Version> ver= versionService.findById(Integer.parseInt(versionId));
+        if (ver.isPresent()){
+            List<Version> versions = versionService.findAllByProductID(productId);
+            for( Version v : versions){
+                if (version_update.compare(v)){
+                    return new ApiResult(409,"version already exist !");
+                }
+            }
+
+            Version version = ver.get();
             version.setName(version_update.getName());
             version.setProperties(version_update.getProperties());
             version.setImage(version_update.getImage());
             version.setBarCode(version_update.getBarCode());
             version.setSkuCode(version_update.getSkuCode());
             version.setPrice(version_update.getPrice());
-            return versionService.save(version);
-        }).orElseThrow(() -> new ResourceNotFoundException("versionId " + versionId + "not found"));
+            versionService.save(version);
+            return new ApiResult(200,"Update version successful");
+        }
+        return new ApiResult(404,"versionId "+versionId+" not found");
     }
 
     @RequestMapping(value = "/products/{product_id}/versions/{version_id}",method = RequestMethod.DELETE)

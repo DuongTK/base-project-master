@@ -7,7 +7,8 @@ import java.util.Optional;
 public interface VersionService {
     List<Version> findAllByProductID(String productId);
     Version save(Version version);
-    Optional<Version> findById(String id);
+    Optional<Version> findById(int id);
     Optional<Version> findByIdAndProductId(String productId,String versionId);
     void delete(Version version);
+    void deleteAll(List<Version> versions);
 }

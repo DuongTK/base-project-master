@@ -4,30 +4,31 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import sapo.vn.product.utilities.RandomString;
 import javax.persistence.*;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Entity
 @Table(name = "version")
-public class Version extends AuditModel{
+public class Version extends BaseObject {
     @Id
     @JsonIgnore
-    private String id = RandomString.generateString(9);
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private int id;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="product_id",nullable = false)
+    @JoinColumn(name="product_id")
     private Product product;
 
     @Column(nullable = false)
     private String name;
 
     @ElementCollection
-    private List<String> properties;
+    private Map<String,String> properties;
 
     private String image;
 
@@ -38,5 +39,14 @@ public class Version extends AuditModel{
     private String barCode;
 
     private String price;
+
+    public boolean compare(Version version){
+        Collection<String> valuesIn = this.properties.values();
+        Collection<String> valuesOut = version.properties.values();
+        if (valuesIn.containsAll(valuesOut) && valuesOut.containsAll(valuesIn)){
+            return true;
+        }
+        return false;
+    }
 
 }

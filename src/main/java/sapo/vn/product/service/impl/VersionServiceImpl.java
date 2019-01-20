@@ -17,7 +17,7 @@ public class VersionServiceImpl implements VersionService {
 
     @Override
     public List<Version> findAllByProductID(String productId) {
-        return (List<Version>)versionRepository.findAllByProductID(productId);
+        return versionRepository.findAllByProductID(productId);
     }
 
     @Override
@@ -26,7 +26,7 @@ public class VersionServiceImpl implements VersionService {
     }
 
     @Override
-    public Optional<Version> findById(String id) {
+    public Optional<Version> findById(int id) {
         return versionRepository.findById(id);
     }
 
@@ -38,6 +38,11 @@ public class VersionServiceImpl implements VersionService {
     @Override
     public void delete(Version version) {
         versionRepository.delete(version);
+    }
+
+    @Override
+    public void deleteAll(List<Version> versions) {
+        versionRepository.deleteAll(versions);
     }
 
 }
